@@ -1,0 +1,16 @@
+[x][~][x][x][x]
+[x][x][x][~][x]
+[~][x][~][x][x]
+[x][x][x][~][~]
+[x][~][x][x][x]
+
+1. choose a random spot on the outside of the grid. this is
+part of the grid.
+2. mark the surrounding tiles as potential spots
+3. randomly choose one of the potential spots, this is now part
+of the grid
+4. mark those surrounding tiles as potential spots
+5. if, at any time, a square has 2+ surrounding squares that
+are part of the maze, it cannot be used (even if it was marked
+potential before)
+6. go to 3 until maze is complete
