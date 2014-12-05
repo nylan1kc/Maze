@@ -8,11 +8,20 @@ function love.load()
 		width = 50,
 		height = 50
 	}
+	goal = {
+		x = 0,
+		y = 0,
+		width = 50,
+		height = 50
+	}
 	createGrid()
-		
+	
 end
 
 function love.update()
+	if player.x == goal.x and player.y == goal.y then
+		createGrid()
+	end
 end
 
 function love.draw()
@@ -29,6 +38,9 @@ function love.draw()
 			end
 		end
 	end
+	--draw goal
+	love.graphics.setColor(255, 0, 255)
+	love.graphics.rectangle("fill", goal.x * 50, goal.y * 50, goal.width, goal.height)
 	--draw player
 	love.graphics.setColor(0, 255, 255)
 	love.graphics.rectangle("fill", player.x * 50, player.y * 50, player.width, player.height)
@@ -109,6 +121,17 @@ function createGrid()
 			table.remove(potentialGrid, rand)
 		end
 	end
+	local goalGrid = {}
+	for i = 0, 9 do
+		for j = 0, 9 do
+			if grid[i][j].maze == true and i ~= player.x and j ~= player.y and math.abs((player.x - i) + (player.y - j)) > 5 then
+				table.insert(goalGrid, {x = i, y = j})
+			end
+		end
+	end
+	local rand = rng:random(1, table.getn(goalGrid))
+	goal.x = goalGrid[rand].x
+	goal.y = goalGrid[rand].y
 end
 
 function love.keypressed(key)
