@@ -29,7 +29,7 @@ function love.load()
 		width = 50,
 		height = 50,
 		light = false,
-		flashlight = false,
+		flashlight = true,
 		hourglass = false
 	}
 	item = {
@@ -312,6 +312,7 @@ function createGrid()
 		if table.getn(potentialGrid) > 0 then
 			local rand = rng:random(1, table.getn(potentialGrid))
 			grid[potentialGrid[rand].i][potentialGrid[rand].j].maze = true
+			grid[potentialGrid[rand].i][potentialGrid[rand].j].exclude = false
 			if potentialGrid[rand].i - 1 >= 0 and grid[potentialGrid[rand].i - 1][potentialGrid[rand].j].maze == false and grid[potentialGrid[rand].i - 1][potentialGrid[rand].j].exclude == false then
 				table.insert(potentialGrid, {i = potentialGrid[rand].i - 1, j = potentialGrid[rand].j})
 			end
