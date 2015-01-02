@@ -20,6 +20,11 @@ function love.load()
 	hourglassImage = love.graphics.newImage("hourglass.png")
 	stopwatchImage = love.graphics.newImage("clock.png")
 	
+	transition = false
+	transitionLevel = 0
+	transitionX = 0
+	transitionY = 0
+	
 	time_running = false
 	time = 60
 	
@@ -29,7 +34,7 @@ function love.load()
 		width = 50,
 		height = 50,
 		light = false,
-		flashlight = true,
+		flashlight = false,
 		hourglass = false
 	}
 	item = {
@@ -98,9 +103,12 @@ function love.load()
 	font64 = love.graphics.newFont("MikronX.ttf", 64)
 	font32 = love.graphics.newFont("MikronX.ttf", 32)
 	font16 = love.graphics.newFont("MikronX.ttf", 16)
+	previousPalette = rng:random(1, table.getn(palettes))
 	currentPalette = rng:random(1, table.getn(palettes))
 	nextPalette = rng:random(1, table.getn(palettes))
 	createGrid()
+	previousGrid = grid
+	transition = false
 	
 end
 
@@ -117,8 +125,10 @@ function love.update(dt)
 		--let there be light
 		if love.keyboard.isDown(" ") and player.flashlight == false then
 			player.light = true
+			bgm:setPitch(1.5)
 		else
 			player.light = false
+			bgm:setPitch(1)
 		end
 		--timer update
 		time_running = true
@@ -172,23 +182,60 @@ function love.update(dt)
 		goalSound:play()
 		createGrid()
 	end
+	if transition == true then
+		transitionLevel = transitionLevel + 1
+		if transitionLevel > 10 then
+			transition = false
+			transitionLevel = 0
+		end
+	end
 end
 
 function love.draw()
 	love.graphics.setColor(0, 0, 0)
-	for i = 0, 9 do
-		for j = 0, 9 do
-			if grid[i][j].maze == true then
-				if player.light == true or player.flashlight == true then
-					love.graphics.setColor(palettes[currentPalette][1].r, palettes[currentPalette][1].g, palettes[currentPalette][1].b)
-				else
+	if transition == false then
+		for i = 0, 9 do
+			for j = 0, 9 do
+				if grid[i][j].maze == true then
+					if player.light == true or player.flashlight == true then
+						love.graphics.setColor(palettes[currentPalette][1].r, palettes[currentPalette][1].g, palettes[currentPalette][1].b)
+					else
+						love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
+					end
+					love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
+				elseif grid[i][j].exclude == true then
 					love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
+					love.graphics.rectangle("fill", i* 50, j* 50, 50, 50)
 				end
-				love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
 			end
-			if grid[i][j].exclude == true then
-				love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
-				love.graphics.rectangle("fill", i* 50, j* 50, 50, 50)
+		end
+	else
+		for i = 0, 9 do
+			for j = 0, 9 do
+				if previousGrid[i][j].maze == true then
+					if player.light == true or player.flashlight == true then
+						love.graphics.setColor(palettes[previousPalette][1].r, palettes[previousPalette][1].g, palettes[previousPalette][1].b)
+					else
+						love.graphics.setColor(palettes[previousPalette][2].r, palettes[previousPalette][2].g, palettes[previousPalette][2].b)
+					end
+					love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
+				elseif previousGrid[i][j].exclude == true then
+					love.graphics.setColor(palettes[previousPalette][2].r, palettes[previousPalette][2].g, palettes[previousPalette][2].b)
+					love.graphics.rectangle("fill", i* 50, j* 50, 50, 50)
+				end
+				if i >= transitionX - transitionLevel and i <= transitionX + transitionLevel and j >= transitionY - transitionLevel and j <= transitionY + transitionLevel then
+					if grid[i][j].maze == true then
+						if player.light == true or player.flashlight == true then
+							love.graphics.setColor(palettes[currentPalette][1].r, palettes[currentPalette][1].g, palettes[currentPalette][1].b)
+						else
+							love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
+						end
+						love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
+					elseif grid[i][j].exclude == true then
+						love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
+						love.graphics.rectangle("fill", i* 50, j* 50, 50, 50)
+					end
+				end
 			end
 		end
 	end
@@ -246,11 +293,13 @@ function love.draw()
 end
 
 function createGrid()
+	previousGrid = grid
 	grid = {}
 	potentialGrid = {}
 	while nextPalette == currentPalette do
 		nextPalette = rng:random(1, table.getn(palettes))
 	end
+	previousPalette = currentPalette
 	currentPalette = nextPalette
 	while nextPalette == currentPalette do
 		nextPalette = rng:random(1, table.getn(palettes))
@@ -394,6 +443,9 @@ function createGrid()
 		item.y = goalGrid[rand].y
 		table.remove(goalGrid, rand)
 	end
+	transition = true
+	transitionX = player.x
+	transitionY = player.y
 end
 
 function love.keypressed(key)
