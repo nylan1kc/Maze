@@ -12,6 +12,8 @@ function love.load()
 	bgmEnd = love.audio.newSource("Getting Hotter - END.wav")
 	goalSound = love.audio.newSource("pickup.wav")
 	itemSound = love.audio.newSource("pickup2.wav")
+	rainbowItemSound = love.audio.newSource("pickup3.wav")
+	badItemSound = love.audio.newSource("pickup4.wav")
 	hourglassSound = love.audio.newSource("ticktock.wav")
 	hourglassSound:setLooping(true)
 	
@@ -19,6 +21,23 @@ function love.load()
 	flashlightImage = love.graphics.newImage("flashlight.png")
 	hourglassImage = love.graphics.newImage("hourglass.png")
 	stopwatchImage = love.graphics.newImage("clock.png")
+	
+	stopwatchRainbowImage = love.graphics.newImage("clock_rainbow.png")
+	restartRainbowImage = love.graphics.newImage("restart_rainbow.png")
+	magnetRainbowImage = love.graphics.newImage("magnet_rainbow.png")
+	
+	blindImage = love.graphics.newImage("blind.png")
+	curseImage = love.graphics.newImage("curse.png")
+	
+	local Quad = love.graphics.newQuad
+	quads = {
+		Quad(0, 0, 50, 50, 300, 50),
+		Quad(50, 0, 50, 50, 300, 50),
+		Quad(100, 0, 50, 50, 300, 50),
+		Quad(150, 0, 50, 50, 300, 50),
+		Quad(200, 0, 50, 50, 300, 50),
+		Quad(250, 0, 50, 50, 300, 50)
+	}
 	
 	transition = false
 	transitionLevel = 0
@@ -35,23 +54,35 @@ function love.load()
 		height = 50,
 		light = false,
 		flashlight = false,
-		hourglass = false
+		hourglass = false,
+		magnet = false,
+		blind = false,
+		cursed = false,
+		shadowX = 0,
+		shadowY = 0,
+		shadowTimer = 255
 	}
 	item = {
 		exists = false,
 		id = 0,
-		timer = 0,
+		flashlightTimer = 0,
+		hourglassTimer = 0,
+		magnetTimer = 0,
+		blindTimer = 0,
+		curseTimer = 0,
 		x = 0,
 		y = 0,
 		width = 50,
-		height = 50
+		height = 50,
+		currentFrame = 1
 	}
 	
 	goal = {
 		x = 0,
 		y = 0,
 		width = 50,
-		height = 50
+		height = 50,
+		timer = 0
 	}
 	palettes = {
 		{
@@ -139,41 +170,115 @@ function love.update(dt)
 				time = time - dt
 			end			
 		end
-		if item.timer > 0 then
-			item.timer = item.timer - dt
-			if item.timer <= 0 then
-				item.timer = 0
+		--timer for flashlight
+		if item.flashlightTimer > 0 then
+			item.flashlightTimer = item.flashlightTimer - dt
+			if item.flashlightTimer <= 0 then
+				item.flashlightTimer = 0
 				if player.flashlight == true then
 					player.flashlight = false
 				end
+			end
+		end
+		--timer for hourglass
+		if item.hourglassTimer > 0 then
+			item.hourglassTimer = item.hourglassTimer - dt
+			if item.hourglassTimer <= 0 then
+				item.hourglassTimer = 0
 				if player.hourglass == true then
 					player.hourglass = false
 					hourglassSound:stop()
 				end
 			end
 		end
+		--timer for magnet
+		if item.magnetTimer > 0 then
+			item.magnetTimer = item.magnetTimer - dt
+			if item.magnetTimer <= 0 then
+				item.magnetTimer = 0
+				if player.magnet == true then
+					player.magnet = false
+				end
+			end
+		end
+		--timer for blindness
+		if item.blindTimer > 0 then
+			item.blindTimer = item.blindTimer - dt
+			if item.blindTimer <= 0 then
+				item.blindTimer = 0
+				if player.blind == true then
+					player.blind = false
+				end
+			end
+		end
+		--timer for curse
+		if item.curseTimer > 0 then
+			item.curseTimer = item.curseTimer - dt
+			if item.curseTimer <= 0 then
+				item.curseTimer = 0
+				if player.cursed == true then
+					player.cursed = false
+				end
+			end
+		end
+		--ran out of time; end the game
 		if time < 0 then
 			time_running = false
 			bgm:stop()
 			gamemode = "gameover"
 			bgmEnd:play()
 		end
+		--goal timer for pulsing visual
+		if goal.timer < 255 then
+			goal.timer = goal.timer + 5
+		else
+			goal.timer = 0
+		end
+		--player timer for shadows
+		if player.shadowTimer < 255 then
+			player.shadowTimer = player.shadowTimer + 15
+		else
+			player.shadowTimer = 255
+		end
 	end
 	--player got item
 	if player.x == item.x and player.y == item.y and item.exists == true then
-		itemSound:play()
 		item.exists = false
 		if item.id == 1 then
+			itemSound:play()
 			player.flashlight = true
-			item.timer = 5
+			item.flashlightTimer = 10
 		elseif item.id == 2 then
+			itemSound:play()
 			time = time + 15
-			item.timer = 5
 		elseif item.id == 3 then
+			itemSound:play()
 			player.hourglass = true
 			bgm:pause()
 			hourglassSound:play()
-			item.timer = 5
+			item.hourglassTimer = 10
+		elseif item.id == 4 then
+			rainbowItemSound:play()
+			time = time + 30
+		elseif item.id == 5 then
+			rainbowItemSound:play()
+			time = 60
+			createGrid()
+		elseif item.id == 6 then
+			rainbowItemSound:play()
+			player.magnet = true
+			item.magnetTimer = 10
+		elseif item.id == 7 then
+			badItemSound:play()
+			player.blind = true
+			item.blindTimer = 5
+		elseif item.id == 8 then
+			badItemSound:play()
+			player.cursed = true
+			item.curseTimer = 10
+		elseif item.id == 9 then
+			badItemSound:play()
+			time = time - 5
 		end
 	end
 	--player got to the goal, change the level
@@ -182,12 +287,17 @@ function love.update(dt)
 		goalSound:play()
 		createGrid()
 	end
+	--transition effect when player gets goal
 	if transition == true then
 		transitionLevel = transitionLevel + 1
 		if transitionLevel > 10 then
 			transition = false
 			transitionLevel = 0
 		end
+	end
+	item.currentFrame = item.currentFrame + 1
+	if item.currentFrame > 6 then
+		item.currentFrame = 1
 	end
 end
 
@@ -196,34 +306,7 @@ function love.draw()
 	if transition == false then
 		for i = 0, 9 do
 			for j = 0, 9 do
-				if grid[i][j].maze == true then
-					if player.light == true or player.flashlight == true then
-						love.graphics.setColor(palettes[currentPalette][1].r, palettes[currentPalette][1].g, palettes[currentPalette][1].b)
-					else
-						love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
-					end
-					love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
-				elseif grid[i][j].exclude == true then
-					love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
-					love.graphics.rectangle("fill", i* 50, j* 50, 50, 50)
-				end
-			end
-		end
-	else
-		for i = 0, 9 do
-			for j = 0, 9 do
-				if previousGrid[i][j].maze == true then
-					if player.light == true or player.flashlight == true then
-						love.graphics.setColor(palettes[previousPalette][1].r, palettes[previousPalette][1].g, palettes[previousPalette][1].b)
-					else
-						love.graphics.setColor(palettes[previousPalette][2].r, palettes[previousPalette][2].g, palettes[previousPalette][2].b)
-					end
-					love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
-				elseif previousGrid[i][j].exclude == true then
-					love.graphics.setColor(palettes[previousPalette][2].r, palettes[previousPalette][2].g, palettes[previousPalette][2].b)
-					love.graphics.rectangle("fill", i* 50, j* 50, 50, 50)
-				end
-				if i >= transitionX - transitionLevel and i <= transitionX + transitionLevel and j >= transitionY - transitionLevel and j <= transitionY + transitionLevel then
+				if player.cursed == false then
 					if grid[i][j].maze == true then
 						if player.light == true or player.flashlight == true then
 							love.graphics.setColor(palettes[currentPalette][1].r, palettes[currentPalette][1].g, palettes[currentPalette][1].b)
@@ -235,31 +318,114 @@ function love.draw()
 						love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
 						love.graphics.rectangle("fill", i* 50, j* 50, 50, 50)
 					end
+				else
+					love.graphics.setColor(0, 0, 0)
+					love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
+				end
+			end
+		end
+	else
+		for i = 0, 9 do
+			for j = 0, 9 do
+				if player.cursed == false then
+					if previousGrid[i][j].maze == true then
+						if player.light == true or player.flashlight == true then
+							love.graphics.setColor(palettes[previousPalette][1].r, palettes[previousPalette][1].g, palettes[previousPalette][1].b)
+						else
+							love.graphics.setColor(palettes[previousPalette][2].r, palettes[previousPalette][2].g, palettes[previousPalette][2].b)
+						end
+						love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
+					elseif previousGrid[i][j].exclude == true then
+						love.graphics.setColor(palettes[previousPalette][2].r, palettes[previousPalette][2].g, palettes[previousPalette][2].b)
+						love.graphics.rectangle("fill", i* 50, j* 50, 50, 50)
+					end
+					if i >= transitionX - transitionLevel and i <= transitionX + transitionLevel and j >= transitionY - transitionLevel and j <= transitionY + transitionLevel then
+						if grid[i][j].maze == true then
+							if player.light == true or player.flashlight == true then
+								love.graphics.setColor(palettes[currentPalette][1].r, palettes[currentPalette][1].g, palettes[currentPalette][1].b)
+							else
+								love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
+							end
+							love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
+						elseif grid[i][j].exclude == true then
+							love.graphics.setColor(palettes[currentPalette][2].r, palettes[currentPalette][2].g, palettes[currentPalette][2].b)
+							love.graphics.rectangle("fill", i* 50, j* 50, 50, 50)
+						end
+					end
+				else
+					love.graphics.setColor(0, 0, 0)
+					love.graphics.rectangle("fill", i * 50, j * 50, 50, 50)
 				end
 			end
 		end
 	end
 	if gamemode == "play" then
 		--draw goal
-		love.graphics.setColor(palettes[nextPalette][2].r, palettes[nextPalette][2].g, palettes[nextPalette][2].b)
-		love.graphics.rectangle("fill", goal.x * 50, goal.y * 50, goal.width, goal.height)
+		if player.blind == false then
+			love.graphics.setColor(palettes[nextPalette][2].r, palettes[nextPalette][2].g, palettes[nextPalette][2].b)
+			love.graphics.rectangle("fill", goal.x * 50, goal.y * 50, goal.width, goal.height)
+			love.graphics.setColor(palettes[nextPalette][2].r, palettes[nextPalette][2].g, palettes[nextPalette][2].b, 255 - goal.timer)
+			love.graphics.rectangle("fill", (goal.x * 50) - (goal.timer / 5), (goal.y * 50) - (goal.timer / 5), goal.width + (goal.timer / 2.5), goal.height + (goal.timer / 2.5))		
+		end
 		--draw item
 		if item.exists == true then
 			love.graphics.setColor(255, 255, 255)
 			if item.id == 1 then
 				love.graphics.draw(flashlightImage, item.x * 50, item.y * 50)
+				love.graphics.setColor(255, 255, 255, 255 - goal.timer)
+				love.graphics.draw(flashlightImage, (item.x * 50) - (goal.timer / 5), (item.y * 50) - (goal.timer / 5), 0, 1 + (goal.timer / 127.5), 1 + (goal.timer / 127.5))
 			elseif item.id == 2 then
 				love.graphics.draw(stopwatchImage, item.x * 50, item.y * 50)
+				love.graphics.setColor(255, 255, 255, 255 - goal.timer)
+				love.graphics.draw(stopwatchImage, (item.x * 50) - (goal.timer / 5), (item.y * 50) - (goal.timer / 5), 0, 1 + (goal.timer / 127.5), 1 + (goal.timer / 127.5))
 			elseif item.id == 3 then
 				love.graphics.draw(hourglassImage, item.x * 50, item.y * 50)
+				love.graphics.setColor(255, 255, 255, 255 - goal.timer)
+				love.graphics.draw(hourglassImage, (item.x * 50) - (goal.timer / 5), (item.y * 50) - (goal.timer / 5), 0, 1 + (goal.timer / 127.5), 1 + (goal.timer / 127.5))
+			elseif item.id == 4 then
+				love.graphics.draw(stopwatchRainbowImage, quads[item.currentFrame], item.x * 50, item.y * 50)
+				love.graphics.setColor(255, 255, 255, 255 - goal.timer)
+				love.graphics.draw(stopwatchRainbowImage, quads[item.currentFrame], (item.x * 50) - (goal.timer / 2.5), (item.y * 50) - (goal.timer / 2.5), 0, 1 + (goal.timer / 63.75), 1 + (goal.timer / 63.75))
+			elseif item.id == 5 then
+				love.graphics.draw(restartRainbowImage, quads[item.currentFrame], item.x * 50, item.y * 50)
+				love.graphics.setColor(255, 255, 255, 255 - goal.timer)
+				love.graphics.draw(restartRainbowImage, quads[item.currentFrame], (item.x * 50) - (goal.timer / 2.5), (item.y * 50) - (goal.timer / 2.5), 0, 1 + (goal.timer / 63.75), 1 + (goal.timer / 63.75))
+			elseif item.id == 6 then
+				love.graphics.draw(magnetRainbowImage, quads[item.currentFrame], item.x * 50, item.y * 50)
+				love.graphics.setColor(255, 255, 255, 255 - goal.timer)
+				love.graphics.draw(magnetRainbowImage, quads[item.currentFrame], (item.x * 50) - (goal.timer / 2.5), (item.y * 50) - (goal.timer / 2.5), 0, 1 + (goal.timer / 63.75), 1 + (goal.timer / 63.75))
+			elseif item.id == 7 then
+				love.graphics.setColor(0, 0, 0)
+				love.graphics.draw(blindImage, item.x * 50, item.y * 50)
+				love.graphics.setColor(255 - goal.timer, 0, 0, 255 - goal.timer)
+				love.graphics.draw(blindImage, (item.x * 50) - (goal.timer / 5), (item.y * 50) - (goal.timer / 5), 0, 1 + (goal.timer / 127.5), 1 + (goal.timer / 127.5))
+			elseif item.id == 8 then
+				love.graphics.setColor(0, 0, 0)
+				love.graphics.draw(curseImage, item.x * 50, item.y * 50)
+				love.graphics.setColor(255 - goal.timer, 0, 0, 255 - goal.timer)
+				love.graphics.draw(curseImage, (item.x * 50) - (goal.timer / 5), (item.y * 50) - (goal.timer / 5), 0, 1 + (goal.timer / 127.5), 1 + (goal.timer / 127.5))
+			elseif item.id == 9 then
+				love.graphics.setColor(0, 0, 0)
+				love.graphics.draw(stopwatchImage, item.x * 50, item.y * 50)
+				love.graphics.setColor(255 - goal.timer, 0, 0, 255 - goal.timer)
+				love.graphics.draw(stopwatchImage, (item.x * 50) - (goal.timer / 5), (item.y * 50) - (goal.timer / 5), 0, 1 + (goal.timer / 127.5), 1 + (goal.timer / 127.5))
 			end
 		end
 		--draw player
 		love.graphics.setColor(255, 255, 255)
 		love.graphics.draw(playerImage, player.x * 50, player.y * 50)
+		love.graphics.setColor(255, 255, 255, 255 - player.shadowTimer)
+		love.graphics.draw(playerImage, player.shadowX * 50, player.shadowY * 50)
+		--draw black bar
+		love.graphics.setColor(0, 0, 0)
+		love.graphics.rectangle("fill", 0, 500, 500, 100)
 		--draw time
 		if time > 0 then
-			love.graphics.setColor(255, 255, 255)
+			if player.light == true then
+				love.graphics.setColor(255, 0, 0)
+			else
+				love.graphics.setColor(255, 255, 255)
+			end
 			love.graphics.setFont(font32)
 			love.graphics.print(math.floor(time * 10^2 + 0.5) / 100, 300, 500)
 		end
@@ -388,11 +554,17 @@ function createGrid()
 		end
 	end
 	--get goal
-	local goalGrid = {}
+	goalGrid = {}
 	for i = 0, 9 do
 		for j = 0, 9 do
-			if grid[i][j].maze == true and i ~= player.x and j ~= player.y and math.abs((player.x - i) + (player.y - j)) > 5 then
-				table.insert(goalGrid, {x = i, y = j})
+			if player.magnet == true then
+				if grid[i][j].maze == true and i ~= player.x and j ~= player.y and math.abs((player.x - i) + (player.y - j)) <= 1 then
+					table.insert(goalGrid, {x = i, y = j})
+				end
+			else
+				if grid[i][j].maze == true and i ~= player.x and j ~= player.y and math.abs((player.x - i) + (player.y - j)) > 5 then
+					table.insert(goalGrid, {x = i, y = j})
+				end
 			end
 		end
 	end
@@ -435,10 +607,11 @@ function createGrid()
 			itemCheck = true
 		end
 	end
-	if itemCheck == true and item.timer <= 0 then
+	if itemCheck == true then
 		local rand = rng:random(1, table.getn(goalGrid))
 		item.exists = true
-		item.id = rng:random(1, 3)
+		--item.id = rng:random(1, 9)
+		item.id = 9
 		item.x = goalGrid[rand].x
 		item.y = goalGrid[rand].y
 		table.remove(goalGrid, rand)
@@ -452,18 +625,30 @@ function love.keypressed(key)
 	if gamemode == "play" then
 		if key == "left" then
 			if player.x > 0 and grid[player.x - 1][player.y].maze == true then
+				player.shadowTimer = 0
+				player.shadowX = player.x
+				player.shadowY = player.y
 				player.x = player.x - 1
 			end
 		elseif key == "right" then
 			if player.x < 9 and grid[player.x + 1][player.y].maze == true then
+				player.shadowTimer = 0
+				player.shadowX = player.x
+				player.shadowY = player.y
 				player.x = player.x + 1
 			end
 		elseif key == "up" then
 			if player.y > 0 and grid[player.x][player.y - 1].maze == true then
+				player.shadowTimer = 0
+				player.shadowX = player.x
+				player.shadowY = player.y
 				player.y = player.y - 1
 			end
 		elseif key == "down" then
 			if player.y < 9 and grid[player.x][player.y + 1].maze == true then
+				player.shadowTimer = 0
+				player.shadowX = player.x
+				player.shadowY = player.y
 				player.y = player.y + 1
 			end
 		elseif key == "r" then
@@ -477,8 +662,13 @@ function love.keypressed(key)
 			time = 60
 			score = 0
 			item.exists = false
-			item.timer = 0
+			item.flashlightTimer = 0
+			item.hourglassTimer = 0
 			createGrid()
+			player.flashlight = false
+			player.cursed = false
+			player.blind = false
+			player.magnet = false
 			gamemode = "play"
 		end
 	end
