@@ -17,6 +17,9 @@ function love.load()
 	hourglassSound = love.audio.newSource("ticktock.wav")
 	hourglassSound:setLooping(true)
 	
+	arrowKeys = love.graphics.newImage("arrows.png")
+	spaceBarKey = love.graphics.newImage("spacebar.png")
+	
 	playerImage = love.graphics.newImage("player.png")
 	flashlightImage = love.graphics.newImage("flashlight.png")
 	hourglassImage = love.graphics.newImage("hourglass.png")
@@ -75,6 +78,13 @@ function love.load()
 		width = 50,
 		height = 50,
 		currentFrame = 1
+	}
+	
+	text = {
+		value = "",
+		x = 0,
+		y = 0,
+		alpha = 0
 	}
 	
 	goal = {
@@ -139,13 +149,19 @@ function love.load()
 	nextPalette = rng:random(1, table.getn(palettes))
 	createGrid()
 	previousGrid = grid
-	transition = false
-	
 end
 
 function love.update(dt)
+	if dt < 1/30 then
+		love.timer.sleep(1/60 - dt)
+	end
 	if gamemode == "title" then
 		titleMusic:play()
+		if love.keyboard.isDown(" ") then
+			player.light = true
+		else
+			player.light = false
+		end
 	else
 		titleMusic:stop()
 	end
@@ -230,7 +246,13 @@ function love.update(dt)
 		end
 		--goal timer for pulsing visual
 		if goal.timer < 255 then
-			goal.timer = goal.timer + 5
+			if player.hourglass == false then
+				if player.light == true and goal.timer % 15 == 0 then
+					goal.timer = goal.timer + 15
+				else
+					goal.timer = goal.timer + 5
+				end
+			end
 		else
 			goal.timer = 0
 		end
@@ -250,6 +272,10 @@ function love.update(dt)
 			item.flashlightTimer = 10
 		elseif item.id == 2 then
 			itemSound:play()
+			text.value = "+15"
+			text.x = player.x * 50
+			text.y = player.y * 50
+			text.alpha = 255
 			time = time + 15
 		elseif item.id == 3 then
 			itemSound:play()
@@ -259,6 +285,10 @@ function love.update(dt)
 			item.hourglassTimer = 10
 		elseif item.id == 4 then
 			rainbowItemSound:play()
+			text.value = "+30"
+			text.x = player.x * 50
+			text.y = player.y * 50
+			text.alpha = 255
 			time = time + 30
 		elseif item.id == 5 then
 			rainbowItemSound:play()
@@ -278,6 +308,10 @@ function love.update(dt)
 			item.curseTimer = 10
 		elseif item.id == 9 then
 			badItemSound:play()
+			text.value = "-5"
+			text.x = player.x * 50
+			text.y = player.y * 50
+			text.alpha = 255
 			time = time - 5
 		end
 	end
@@ -298,6 +332,11 @@ function love.update(dt)
 	item.currentFrame = item.currentFrame + 1
 	if item.currentFrame > 6 then
 		item.currentFrame = 1
+	end
+	--alpha for text
+	if text.alpha > 0 then
+		text.alpha = text.alpha - 5
+		text.y = text.y - 2
 	end
 end
 
@@ -368,7 +407,7 @@ function love.draw()
 			love.graphics.rectangle("fill", (goal.x * 50) - (goal.timer / 5), (goal.y * 50) - (goal.timer / 5), goal.width + (goal.timer / 2.5), goal.height + (goal.timer / 2.5))		
 		end
 		--draw item
-		if item.exists == true then
+		if item.exists == true and player.blind == false then
 			love.graphics.setColor(255, 255, 255)
 			if item.id == 1 then
 				love.graphics.draw(flashlightImage, item.x * 50, item.y * 50)
@@ -433,16 +472,29 @@ function love.draw()
 		love.graphics.setColor(255, 255, 255)
 		love.graphics.setFont(font32)
 		love.graphics.print("Score: " .. score, 10, 500)
+		--draw text
+		love.graphics.setColor(255, 255, 255, text.alpha)
+		love.graphics.setFont(font32)
+		love.graphics.print(text.value, text.x, text.y)
 	end
 	
+	--draw title screen
 	if gamemode == "title" then
 		love.graphics.setColor(10, 10, 10, 200)
 		love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
 		love.graphics.setFont(font64)
 		love.graphics.setColor(255, 255, 255)
-		love.graphics.printf("Chroma Maze", 100, 50, 300, "center")
+		love.graphics.printf("Chroma Maze", 100, 25, 300, "center")
+		love.graphics.draw(spaceBarKey, 25, 275)
+		love.graphics.draw(arrowKeys, 325, 225)
+		love.graphics.setFont(font32)
+		love.graphics.printf("Press Enter to Start", 0, 450, 500, "center")
 		love.graphics.setFont(font16)
-		love.graphics.printf("Arrow Keys to Move\nSpace to Show Maze\n\nTry to Get to the Goal\nShowing the Maze Decreases Your Time!\n\nPress Enter to Start\n\n\n\n\nMade by: Kyle Nyland", 100, 250, 300, "center")
+		love.graphics.printf("Move", 400, 350, 0, "center")
+		love.graphics.printf("Reveal Maze", 75, 350, 150, "center")
+		love.graphics.printf("Made by: Kyle Nyland", 100, 510, 300, "center")
+		love.graphics.setColor(255, 0, 0)
+		love.graphics.printf("Deplete Time Faster", 25, 375, 250, "center")
 	end
 	
 	if gamemode == "gameover" then
@@ -609,14 +661,25 @@ function createGrid()
 	end
 	if itemCheck == true then
 		local rand = rng:random(1, table.getn(goalGrid))
+		local rand2 = rng:random(0, 100)
 		item.exists = true
-		--item.id = rng:random(1, 9)
-		item.id = 9
+		if rand2 <= 50 then
+			item.id = rng:random(1, 3)
+		elseif rand2 > 50 and rand2 <= 90 then
+			item.id = rng:random(4, 6)
+		else
+			item.id = rng:random(7, 9)
+		end
+		item.id = rng:random(1, 9)
 		item.x = goalGrid[rand].x
 		item.y = goalGrid[rand].y
 		table.remove(goalGrid, rand)
 	end
-	transition = true
+	if gamemode == "title" then
+		transition = false
+	else
+		transition = true
+	end
 	transitionX = player.x
 	transitionY = player.y
 end
@@ -651,12 +714,16 @@ function love.keypressed(key)
 				player.shadowY = player.y
 				player.y = player.y + 1
 			end
-		elseif key == "r" then
-			createGrid();
 		end
 	end
 	if key == "return" then
 		if gamemode == "title" then
+			player.light = false
+			player.x = rng:random(0, 9)
+			player.y = rng:random(0, 9)
+			player.shadowX = player.x
+			player.shadowY = player.y
+			createGrid();
 			gamemode = "play"
 		elseif gamemode == "gameover" then
 			time = 60
@@ -664,6 +731,10 @@ function love.keypressed(key)
 			item.exists = false
 			item.flashlightTimer = 0
 			item.hourglassTimer = 0
+			player.x = rng:random(0, 9)
+			player.y = rng:random(0, 9)
+			player.shadowX = player.x
+			player.shadowY = player.y
 			createGrid()
 			player.flashlight = false
 			player.cursed = false
