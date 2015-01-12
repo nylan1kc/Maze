@@ -84,7 +84,8 @@ function love.load()
 		value = "",
 		x = 0,
 		y = 0,
-		alpha = 0
+		alpha = 0,
+		color = false
 	}
 	
 	goal = {
@@ -276,6 +277,7 @@ function love.update(dt)
 			text.x = player.x * 50
 			text.y = player.y * 50
 			text.alpha = 255
+			text.color = false
 			time = time + 15
 		elseif item.id == 3 then
 			itemSound:play()
@@ -289,6 +291,7 @@ function love.update(dt)
 			text.x = player.x * 50
 			text.y = player.y * 50
 			text.alpha = 255
+			text.color = true
 			time = time + 30
 		elseif item.id == 5 then
 			rainbowItemSound:play()
@@ -312,6 +315,7 @@ function love.update(dt)
 			text.x = player.x * 50
 			text.y = player.y * 50
 			text.alpha = 255
+			text.color = false
 			time = time - 5
 		end
 	end
@@ -473,7 +477,23 @@ function love.draw()
 		love.graphics.setFont(font32)
 		love.graphics.print("Score: " .. score, 10, 500)
 		--draw text
-		love.graphics.setColor(255, 255, 255, text.alpha)
+		if text.color == true then
+			if item.currentFrame == 1 then
+				love.graphics.setColor(232, 76, 61, text.alpha)
+			elseif item.currentFrame == 2 then
+				love.graphics.setColor(231, 126, 35, text.alpha)
+			elseif item.currentFrame == 3 then
+				love.graphics.setColor(241, 196, 15, text.alpha)
+			elseif item.currentFrame == 4 then
+				love.graphics.setColor(47, 204, 113, text.alpha)
+			elseif item.currentFrame == 5 then
+				love.graphics.setColor(53, 152, 220, text.alpha)
+			else
+				love.graphics.setColor(156, 89, 184, text.alpha)
+			end
+		else
+			love.graphics.setColor(255, 255, 255, text.alpha)
+		end
 		love.graphics.setFont(font32)
 		love.graphics.print(text.value, text.x, text.y)
 	end
@@ -607,14 +627,18 @@ function createGrid()
 	end
 	--get goal
 	goalGrid = {}
-	for i = 0, 9 do
-		for j = 0, 9 do
-			if player.magnet == true then
-				if grid[i][j].maze == true and i ~= player.x and j ~= player.y and math.abs((player.x - i) + (player.y - j)) <= 1 then
+	if player.magnet == false then
+		for i = 0, 9 do
+			for j = 0, 9 do
+				if grid[i][j].maze == true and not (i == player.x and j == player.y) and math.abs((player.x - i) + (player.y - j)) > 5 then
 					table.insert(goalGrid, {x = i, y = j})
 				end
-			else
-				if grid[i][j].maze == true and i ~= player.x and j ~= player.y and math.abs((player.x - i) + (player.y - j)) > 5 then
+			end
+		end
+	else
+		for i = player.x - 2, player.x + 2 do
+			for j = player.y - 2, player.y + 2 do
+				if i >= 0 and i <= 9 and j >= 0 and j <= 9 and grid[i][j].maze == true and not (i == player.x and j == player.y) then
 					table.insert(goalGrid, {x = i, y = j})
 				end
 			end
@@ -670,7 +694,6 @@ function createGrid()
 		else
 			item.id = rng:random(7, 9)
 		end
-		item.id = rng:random(1, 9)
 		item.x = goalGrid[rand].x
 		item.y = goalGrid[rand].y
 		table.remove(goalGrid, rand)
