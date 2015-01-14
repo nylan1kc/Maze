@@ -1,10 +1,12 @@
 function love.load()
-	gamemode = "title"
+	gamemode = "title2"
 	rng = love.math.newRandomGenerator(os.time())
 	rng:random(0, 100)
 	
 	score = 0
 	
+	titleImage = love.graphics.newImage("title.png") 	 	
+    logoImage = love.graphics.newImage("logo.png") 
 	titleMusic = love.audio.newSource("Fire.wav")
 	titleMusic:setLooping(true)
 	bgm = love.audio.newSource("Getting Hotter.wav")
@@ -95,6 +97,9 @@ function love.load()
 		height = 50,
 		timer = 0
 	}
+	
+	titleGoalTimer = 0
+	
 	palettes = {
 		{
 			--blue
@@ -155,6 +160,13 @@ end
 function love.update(dt)
 	if dt < 1/30 then
 		love.timer.sleep(1/60 - dt)
+	end
+	if gamemode == "title2" or gamemode == "title" then
+		if titleGoalTimer < 255 then
+			titleGoalTimer = titleGoalTimer + 5
+		else
+			titleGoalTimer = 0
+		end
 	end
 	if gamemode == "title" then
 		titleMusic:play()
@@ -269,6 +281,11 @@ function love.update(dt)
 		item.exists = false
 		if item.id == 1 then
 			itemSound:play()
+			text.value = "LIGHT" 	 	
+			text.x = player.x * 50 	 	
+			text.y = player.y * 50 	 
+			text.color = false
+			text.alpha = 255 
 			player.flashlight = true
 			item.flashlightTimer = 10
 		elseif item.id == 2 then
@@ -281,6 +298,11 @@ function love.update(dt)
 			time = time + 15
 		elseif item.id == 3 then
 			itemSound:play()
+			text.value = "FREEZE"
+			text.x = player.x * 50
+			text.y = player.y * 50
+			text.alpha = 255
+			text.color = false
 			player.hourglass = true
 			bgm:pause()
 			hourglassSound:play()
@@ -295,18 +317,38 @@ function love.update(dt)
 			time = time + 30
 		elseif item.id == 5 then
 			rainbowItemSound:play()
+			text.value = "RESET"
+			text.x = player.x * 50
+			text.y = player.y * 50
+			text.alpha = 255
+			text.color = true
 			time = 60
 			createGrid()
 		elseif item.id == 6 then
 			rainbowItemSound:play()
+			text.value = "MAGNET"
+			text.x = player.x * 50
+			text.y = player.y * 50
+			text.alpha = 255
+			text.color = true
 			player.magnet = true
 			item.magnetTimer = 10
 		elseif item.id == 7 then
 			badItemSound:play()
+			text.value = "BLINDED"
+			text.x = player.x * 50
+			text.y = player.y * 50
+			text.alpha = 255
+			text.color = false
 			player.blind = true
 			item.blindTimer = 5
 		elseif item.id == 8 then
 			badItemSound:play()
+			text.value = "CURSED"
+			text.x = player.x * 50
+			text.y = player.y * 50
+			text.alpha = 255
+			text.color = false
 			player.cursed = true
 			item.curseTimer = 10
 		elseif item.id == 9 then
@@ -495,16 +537,36 @@ function love.draw()
 			love.graphics.setColor(255, 255, 255, text.alpha)
 		end
 		love.graphics.setFont(font32)
-		love.graphics.print(text.value, text.x, text.y)
+		love.graphics.printf(text.value, text.x, text.y, 50, "center")
 	end
 	
+	--draw title2 screen
+	if gamemode == "title2" then
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.draw(titleImage, 0, 0)
+		love.graphics.setFont(font32)
+		love.graphics.printf("Press Enter", 0, 450, 500, "center")
+		love.graphics.setFont(font16)
+		love.graphics.printf("Made by: Kyle Nyland", 100, 510, 300, "center")
+		love.graphics.setColor(palettes[nextPalette][2].r, palettes[nextPalette][2].g, palettes[nextPalette][2].b)
+		love.graphics.rectangle("fill", 25, 250, 100, 100)
+		love.graphics.setColor(palettes[nextPalette][2].r, palettes[nextPalette][2].g, palettes[nextPalette][2].b, 255 - titleGoalTimer)
+		love.graphics.rectangle("fill", 25 - (titleGoalTimer / 5), 250 - (titleGoalTimer / 5), 100 + (titleGoalTimer / 2.5), 100 + (titleGoalTimer / 2.5))	
+	end
 	--draw title screen
 	if gamemode == "title" then
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.draw(titleImage, 0, 0)
+		love.graphics.setColor(palettes[nextPalette][2].r, palettes[nextPalette][2].g, palettes[nextPalette][2].b)
+		love.graphics.rectangle("fill", 25, 250, 100, 100)
+		love.graphics.setColor(palettes[nextPalette][2].r, palettes[nextPalette][2].g, palettes[nextPalette][2].b, 255 - titleGoalTimer)
+		love.graphics.rectangle("fill", 25 - (titleGoalTimer / 5), 250 - (titleGoalTimer / 5), 100 + (titleGoalTimer / 2.5), 100 + (titleGoalTimer / 2.5))			
 		love.graphics.setColor(10, 10, 10, 200)
 		love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+		love.graphics.setColor(255, 255, 255)
+		love.graphics.draw(logoImage, 0, 0)
 		love.graphics.setFont(font64)
 		love.graphics.setColor(255, 255, 255)
-		love.graphics.printf("Chroma Maze", 100, 25, 300, "center")
 		love.graphics.draw(spaceBarKey, 25, 275)
 		love.graphics.draw(arrowKeys, 325, 225)
 		love.graphics.setFont(font32)
@@ -698,7 +760,7 @@ function createGrid()
 		item.y = goalGrid[rand].y
 		table.remove(goalGrid, rand)
 	end
-	if gamemode == "title" then
+	if gamemode ~= "play" then
 		transition = false
 	else
 		transition = true
@@ -740,7 +802,10 @@ function love.keypressed(key)
 		end
 	end
 	if key == "return" then
-		if gamemode == "title" then
+		if gamemode == "title2" then
+			rainbowItemSound:play()
+			gamemode = "title" 
+		elseif gamemode == "title" then
 			player.light = false
 			player.x = rng:random(0, 9)
 			player.y = rng:random(0, 9)
