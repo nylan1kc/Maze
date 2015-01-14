@@ -5,6 +5,13 @@ function love.load()
 	
 	score = 0
 	
+	screenShake = 
+	{
+		x = rng:random(-5, 5),
+		y = rng:random(-5, 5),
+		timer = 0
+	}
+	
 	titleImage = love.graphics.newImage("title.png") 	 	
     logoImage = love.graphics.newImage("logo.png") 
 	titleMusic = love.audio.newSource("Fire.wav")
@@ -175,8 +182,20 @@ function love.update(dt)
 		else
 			player.light = false
 		end
+		if screenShake.timer <= 5 then
+			screenShake.timer = screenShake.timer + 1
+			screenShake.x = rng:random(-5, 5)
+			screenShake.y = rng:random(-5, 5)
+		end
 	else
 		titleMusic:stop()
+	end
+	if gamemode == "gameover" then
+		if screenShake.timer <= 5 then
+			screenShake.timer = screenShake.timer + 1
+			screenShake.x = rng:random(-5, 5)
+			screenShake.y = rng:random(-5, 5)
+		end
 	end
 	if gamemode == "play" then
 		if player.hourglass == false then
@@ -251,9 +270,10 @@ function love.update(dt)
 			end
 		end
 		--ran out of time; end the game
-		if time < 0 then
+		if time <= 0 then
 			time_running = false
 			bgm:stop()
+			screenShake.timer = 0
 			gamemode = "gameover"
 			bgmEnd:play()
 		end
@@ -555,6 +575,9 @@ function love.draw()
 	end
 	--draw title screen
 	if gamemode == "title" then
+		if screenShake.timer <= 5 then
+			love.graphics.translate(screenShake.x, screenShake.y)
+		end
 		love.graphics.setColor(255, 255, 255)
 		love.graphics.draw(titleImage, 0, 0)
 		love.graphics.setColor(palettes[nextPalette][2].r, palettes[nextPalette][2].g, palettes[nextPalette][2].b)
@@ -577,9 +600,16 @@ function love.draw()
 		love.graphics.printf("Made by: Kyle Nyland", 100, 510, 300, "center")
 		love.graphics.setColor(255, 0, 0)
 		love.graphics.printf("Deplete Time Faster", 25, 375, 250, "center")
+		if screenShake.timer == 1 then
+			love.graphics.setColor(255, 255, 255)
+			love.graphics.rectangle("fill", 0, 0, 500, 500)
+		end
 	end
 	
 	if gamemode == "gameover" then
+		if screenShake.timer <= 5 then
+			love.graphics.translate(screenShake.x, screenShake.y)
+		end
 		love.graphics.setColor(10, 10, 10, 200)
 		love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
 		love.graphics.setFont(font32)
@@ -589,6 +619,10 @@ function love.draw()
 		love.graphics.printf("Final Score: " .. score, 0, 200, 500, "center")
 		love.graphics.setFont(font16)
 		love.graphics.printf("Press Enter to Play Again", 100, 400, 300, "center")
+		if screenShake.timer == 1 then
+			love.graphics.setColor(255, 255, 255)
+			love.graphics.rectangle("fill", 0, 0, 500, 500)
+		end
 	end
 end
 
