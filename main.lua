@@ -3,7 +3,23 @@ function love.load()
 	rng = love.math.newRandomGenerator(os.time())
 	rng:random(0, 100)
 	
+	highscore = 0
 	score = 0
+	
+	if not love.filesystem.exists("ChromaMaze.txt") then
+		file = love.filesystem.newFile("ChromaMaze.txt", "w")
+		file:write(highscore)
+		file:close()
+	else
+		file = love.filesystem.newFile("ChromaMaze.txt", "r")
+		file:open("r")
+		highscore = file:read()
+		highscore = tonumber(highscore)
+		if highscore == nil then
+			highscore = 0
+		end
+		file:close()
+	end
 	
 	screenShake = 
 	{
@@ -274,6 +290,11 @@ function love.update(dt)
 			time_running = false
 			bgm:stop()
 			screenShake.timer = 0
+			if score >= highscore then
+				file = love.filesystem.newFile("ChromaMaze.txt", "w")
+				file:write(score)
+				file:close()
+			end
 			gamemode = "gameover"
 			bgmEnd:play()
 		end
@@ -585,21 +606,37 @@ function love.draw()
 		love.graphics.setColor(palettes[nextPalette][2].r, palettes[nextPalette][2].g, palettes[nextPalette][2].b, 255 - titleGoalTimer)
 		love.graphics.rectangle("fill", 25 - (titleGoalTimer / 5), 250 - (titleGoalTimer / 5), 100 + (titleGoalTimer / 2.5), 100 + (titleGoalTimer / 2.5))			
 		love.graphics.setColor(10, 10, 10, 200)
-		love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+		love.graphics.rectangle("fill", -50, -50, love.graphics.getWidth() + 50, love.graphics.getHeight() + 50)
 		love.graphics.setColor(255, 255, 255)
 		love.graphics.draw(logoImage, 0, 0)
 		love.graphics.setFont(font64)
 		love.graphics.setColor(255, 255, 255)
-		love.graphics.draw(spaceBarKey, 25, 275)
-		love.graphics.draw(arrowKeys, 325, 225)
+		love.graphics.draw(spaceBarKey, 25, 300)
+		love.graphics.draw(arrowKeys, 325, 250)
 		love.graphics.setFont(font32)
 		love.graphics.printf("Press Enter to Start", 0, 450, 500, "center")
+		love.graphics.printf("High Score:", 0, 150, 500, "center")
+		if item.currentFrame == 1 then
+				love.graphics.setColor(232, 76, 61)
+			elseif item.currentFrame == 2 then
+				love.graphics.setColor(231, 126, 35)
+			elseif item.currentFrame == 3 then
+				love.graphics.setColor(241, 196, 15)
+			elseif item.currentFrame == 4 then
+				love.graphics.setColor(47, 204, 113)
+			elseif item.currentFrame == 5 then
+				love.graphics.setColor(53, 152, 220)
+			else
+				love.graphics.setColor(156, 89, 184)
+			end
+		love.graphics.printf(highscore, 0, 180, 500, "center")
+		love.graphics.setColor(255, 255, 255)
 		love.graphics.setFont(font16)
-		love.graphics.printf("Move", 400, 350, 0, "center")
-		love.graphics.printf("Reveal Maze", 75, 350, 150, "center")
+		love.graphics.printf("Move", 400, 375, 0, "center")
+		love.graphics.printf("Reveal Maze", 75, 375, 150, "center")
 		love.graphics.printf("Made by: Kyle Nyland", 100, 510, 300, "center")
 		love.graphics.setColor(255, 0, 0)
-		love.graphics.printf("Deplete Time Faster", 25, 375, 250, "center")
+		love.graphics.printf("Deplete Time Faster", 25, 400, 250, "center")
 		if screenShake.timer == 1 then
 			love.graphics.setColor(255, 255, 255)
 			love.graphics.rectangle("fill", 0, 0, 500, 500)
@@ -611,12 +648,32 @@ function love.draw()
 			love.graphics.translate(screenShake.x, screenShake.y)
 		end
 		love.graphics.setColor(10, 10, 10, 200)
-		love.graphics.rectangle("fill", 0, 0, love.graphics.getWidth(), love.graphics.getHeight())
+		love.graphics.rectangle("fill", -50, -50, love.graphics.getWidth() + 50, love.graphics.getHeight() + 50)
 		love.graphics.setFont(font32)
 		love.graphics.setColor(255, 255, 255)
 		love.graphics.printf("Time's Up!", 100, 150, 300, "center")
 		love.graphics.setFont(font64)
-		love.graphics.printf("Final Score: " .. score, 0, 200, 500, "center")
+		love.graphics.printf("Final Score:", 0, 200, 500, "center")
+		if score >= highscore then
+			if item.currentFrame == 1 then
+				love.graphics.setColor(232, 76, 61)
+			elseif item.currentFrame == 2 then
+				love.graphics.setColor(231, 126, 35)
+			elseif item.currentFrame == 3 then
+				love.graphics.setColor(241, 196, 15)
+			elseif item.currentFrame == 4 then
+				love.graphics.setColor(47, 204, 113)
+			elseif item.currentFrame == 5 then
+				love.graphics.setColor(53, 152, 220)
+			else
+				love.graphics.setColor(156, 89, 184)
+			end
+			love.graphics.setFont(font16)
+			love.graphics.printf("High Score!", 0, 350, 500, "center")
+		end
+		love.graphics.setFont(font64)
+		love.graphics.printf(score, 0, 260, 500, "center")
+		love.graphics.setColor(255, 255, 255)
 		love.graphics.setFont(font16)
 		love.graphics.printf("Press Enter to Play Again", 100, 400, 300, "center")
 		if screenShake.timer == 1 then
