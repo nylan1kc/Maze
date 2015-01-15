@@ -14,8 +14,8 @@ function love.load()
 		file = love.filesystem.newFile("ChromaMaze.txt", "r")
 		file:open("r")
 		highscore = file:read()
-		highscore = tonumber(highscore)
-		if highscore == nil then
+		highscore = math.floor(tonumber(highscore))
+		if highscore == nil or highscore < 0 then
 			highscore = 0
 		end
 		file:close()
@@ -615,21 +615,23 @@ function love.draw()
 		love.graphics.draw(arrowKeys, 325, 250)
 		love.graphics.setFont(font32)
 		love.graphics.printf("Press Enter to Start", 0, 450, 500, "center")
-		love.graphics.printf("High Score:", 0, 150, 500, "center")
-		if item.currentFrame == 1 then
-				love.graphics.setColor(232, 76, 61)
-			elseif item.currentFrame == 2 then
-				love.graphics.setColor(231, 126, 35)
-			elseif item.currentFrame == 3 then
-				love.graphics.setColor(241, 196, 15)
-			elseif item.currentFrame == 4 then
-				love.graphics.setColor(47, 204, 113)
-			elseif item.currentFrame == 5 then
-				love.graphics.setColor(53, 152, 220)
-			else
-				love.graphics.setColor(156, 89, 184)
-			end
-		love.graphics.printf(highscore, 0, 180, 500, "center")
+		if highscore ~= 0 then
+			love.graphics.printf("High Score:", 0, 150, 500, "center")
+			if item.currentFrame == 1 then
+					love.graphics.setColor(232, 76, 61)
+				elseif item.currentFrame == 2 then
+					love.graphics.setColor(231, 126, 35)
+				elseif item.currentFrame == 3 then
+					love.graphics.setColor(241, 196, 15)
+				elseif item.currentFrame == 4 then
+					love.graphics.setColor(47, 204, 113)
+				elseif item.currentFrame == 5 then
+					love.graphics.setColor(53, 152, 220)
+				else
+					love.graphics.setColor(156, 89, 184)
+				end
+			love.graphics.printf(highscore, 0, 180, 500, "center")
+		end
 		love.graphics.setColor(255, 255, 255)
 		love.graphics.setFont(font16)
 		love.graphics.printf("Move", 400, 375, 0, "center")
@@ -862,28 +864,28 @@ end
 
 function love.keypressed(key)
 	if gamemode == "play" then
-		if key == "left" then
+		if key == "left" or key == "a" then
 			if player.x > 0 and grid[player.x - 1][player.y].maze == true then
 				player.shadowTimer = 0
 				player.shadowX = player.x
 				player.shadowY = player.y
 				player.x = player.x - 1
 			end
-		elseif key == "right" then
+		elseif key == "right" or key == "d" then
 			if player.x < 9 and grid[player.x + 1][player.y].maze == true then
 				player.shadowTimer = 0
 				player.shadowX = player.x
 				player.shadowY = player.y
 				player.x = player.x + 1
 			end
-		elseif key == "up" then
+		elseif key == "up" or key == "w" then
 			if player.y > 0 and grid[player.x][player.y - 1].maze == true then
 				player.shadowTimer = 0
 				player.shadowX = player.x
 				player.shadowY = player.y
 				player.y = player.y - 1
 			end
-		elseif key == "down" then
+		elseif key == "down" or key == "s" then
 			if player.y < 9 and grid[player.x][player.y + 1].maze == true then
 				player.shadowTimer = 0
 				player.shadowX = player.x
